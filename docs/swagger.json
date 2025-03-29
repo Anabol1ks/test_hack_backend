@@ -4,6 +4,7 @@
         "title": "Онлайн очередь для сдачи практики",
         "contact": {}
     },
+    "host": "https://testhackbackend-production.up.railway.app",
     "paths": {
         "/auth/login": {
             "post": {
@@ -13,6 +14,9 @@
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "auth"
                 ],
                 "summary": "Авторизация пользователя",
                 "parameters": [
@@ -63,6 +67,9 @@
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "auth"
+                ],
                 "summary": "Обновление access токена",
                 "parameters": [
                     {
@@ -111,6 +118,9 @@
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "auth"
                 ],
                 "summary": "Регистрация пользователя",
                 "parameters": [

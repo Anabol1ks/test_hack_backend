@@ -17,6 +17,7 @@ import (
 )
 
 // @Title						Онлайн очередь для сдачи практики
+// @host						https://testhackbackend-production.up.railway.app
 // @securityDefinitions.apikey	BearerAuth
 // @in							header
 // @name						Authorization

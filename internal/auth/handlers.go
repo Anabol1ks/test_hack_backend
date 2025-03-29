@@ -30,15 +30,16 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-//	@Summary		Регистрация пользователя
-//	@Description	Регистрация нового пользователя
-//	@Accept			json
-//	@Produce		json
-//	@Param			user	body		RegisterRequest				true	"Данные пользователя"
-//	@Success		201		{object}	response.SuccessResponse	"Успешная регистрация"
-//	@Failure		400		{object}	response.ErrorResponse		"Ошибка валидации (VALIDATION_ERROR) или пользователь уже существует (EMAIL_EXISTS)"
-//	@Failure		500		{object}	response.ErrorResponse		"Ошибка сервера (PASSWORD_HASH_ERROR, DB_ERROR)"
-//	@Router			/auth/register [post]
+// @Summary		Регистрация пользователя
+// @Description	Регистрация нового пользователя
+// @Tags			auth
+// @Accept			json
+// @Produce		json
+// @Param			user	body		RegisterRequest				true	"Данные пользователя"
+// @Success		201		{object}	response.SuccessResponse	"Успешная регистрация"
+// @Failure		400		{object}	response.ErrorResponse		"Ошибка валидации (VALIDATION_ERROR) или пользователь уже существует (EMAIL_EXISTS)"
+// @Failure		500		{object}	response.ErrorResponse		"Ошибка сервера (PASSWORD_HASH_ERROR, DB_ERROR)"
+// @Router			/auth/register [post]
 func Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -88,16 +89,17 @@ func Register(c *gin.Context) {
 	})
 }
 
-//	@Summary		Авторизация пользователя
-//	@Description	Авторизация пользователя и получение токенов
-//	@Accept			json
-//	@Produce		json
-//	@Param			user	body		LoginRequest			true	"Данные для авторизации"
-//	@Success		200		{object}	response.TokenResponse	"Успешная авторизация"
-//	@Failure		400		{object}	response.ErrorResponse	"Ошибка валидации данных (VALIDATION_ERROR)"
-//	@Failure		401		{object}	response.ErrorResponse	"Неверные учетные данные (INVALID_CREDENTIALS)"
-//	@Failure		500		{object}	response.ErrorResponse	"Ошибка сервера (TOKEN_GENERATION_ERROR)"
-//	@Router			/auth/login [post]
+// @Summary		Авторизация пользователя
+// @Description	Авторизация пользователя и получение токенов
+// @Tags			auth
+// @Accept			json
+// @Produce		json
+// @Param			user	body		LoginRequest			true	"Данные для авторизации"
+// @Success		200		{object}	response.TokenResponse	"Успешная авторизация"
+// @Failure		400		{object}	response.ErrorResponse	"Ошибка валидации данных (VALIDATION_ERROR)"
+// @Failure		401		{object}	response.ErrorResponse	"Неверные учетные данные (INVALID_CREDENTIALS)"
+// @Failure		500		{object}	response.ErrorResponse	"Ошибка сервера (TOKEN_GENERATION_ERROR)"
+// @Router			/auth/login [post]
 func Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -164,16 +166,17 @@ type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
-//	@Summary		Обновление access токена
-//	@Description	Обновление access токена с помощью refresh токена
-//	@Accept			json
-//	@Produce		json
-//	@Param			refresh_token	body		RefreshTokenRequest		true	"Refresh токен"
-//	@Success		200				{object}	response.TokenResponse	"Успешное обновление access токена"
-//	@Failure		400				{object}	response.ErrorResponse	"Ошибка валидации данных (VALIDATION_ERROR)"
-//	@Failure		401				{object}	response.ErrorResponse	"Неверный или просроченный refresh токен (INVALID_REFRESH_TOKEN) или пользователь не найден (USER_NOT_FOUND)"
-//	@Failure		500				{object}	response.ErrorResponse	"Ошибка сервера (TOKEN_GENERATION_ERROR)"
-//	@Router			/auth/refresh [post]
+// @Summary		Обновление access токена
+// @Description	Обновление access токена с помощью refresh токена
+// @Tags			auth
+// @Accept			json
+// @Produce		json
+// @Param			refresh_token	body		RefreshTokenRequest		true	"Refresh токен"
+// @Success		200				{object}	response.TokenResponse	"Успешное обновление access токена"
+// @Failure		400				{object}	response.ErrorResponse	"Ошибка валидации данных (VALIDATION_ERROR)"
+// @Failure		401				{object}	response.ErrorResponse	"Неверный или просроченный refresh токен (INVALID_REFRESH_TOKEN) или пользователь не найден (USER_NOT_FOUND)"
+// @Failure		500				{object}	response.ErrorResponse	"Ошибка сервера (TOKEN_GENERATION_ERROR)"
+// @Router			/auth/refresh [post]
 func RefreshToken(c *gin.Context) {
 	var req RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

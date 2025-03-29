@@ -70,6 +70,7 @@ definitions:
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
     type: object
+host: https://testhackbackend-production.up.railway.app
 info:
   contact: {}
   title: Онлайн очередь для сдачи практики
@@ -106,6 +107,8 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Авторизация пользователя
+      tags:
+      - auth
   /auth/refresh:
     post:
       consumes:
@@ -139,6 +142,8 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Обновление access токена
+      tags:
+      - auth
   /auth/register:
     post:
       consumes:
@@ -168,6 +173,8 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Регистрация пользователя
+      tags:
+      - auth
 securityDefinitions:
   BearerAuth:
     in: header

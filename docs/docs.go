@@ -24,6 +24,9 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "auth"
+                ],
                 "summary": "Авторизация пользователя",
                 "parameters": [
                     {
@@ -73,6 +76,9 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "auth"
+                ],
                 "summary": "Обновление access токена",
                 "parameters": [
                     {
@@ -121,6 +127,9 @@ const docTemplate = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "auth"
                 ],
                 "summary": "Регистрация пользователя",
                 "parameters": [
@@ -260,7 +269,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "",
-	Host:             "",
+	Host:             "https://testhackbackend-production.up.railway.app",
 	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "Онлайн очередь для сдачи практики",
