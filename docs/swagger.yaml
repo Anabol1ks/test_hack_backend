@@ -1,0 +1,176 @@
+definitions:
+  auth.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  auth.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  auth.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      surname:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - surname
+    type: object
+  response.ErrorResponse:
+    properties:
+      code:
+        description: |-
+          Код ошибки для программной обработки
+          example: VALIDATION_ERROR
+        type: string
+      details:
+        description: |-
+          Дополнительные детали об ошибке (опционально)
+          example: поле email должно быть валидным email адресом
+        type: string
+      message:
+        description: |-
+          Человекочитаемое сообщение об ошибке
+          example: Ошибка валидации данных
+        type: string
+    type: object
+  response.SuccessResponse:
+    properties:
+      message:
+        example: Операция успешно выполнена
+        type: string
+    type: object
+  response.TokenResponse:
+    properties:
+      access_token:
+        description: |-
+          JWT токен для доступа к защищенным эндпоинтам
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      refresh_token:
+        description: |-
+          JWT токен для обновления access токена
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+info:
+  contact: {}
+  title: Онлайн очередь для сдачи практики
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Авторизация пользователя и получение токенов
+      parameters:
+      - description: Данные для авторизации
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная авторизация
+          schema:
+            $ref: '#/definitions/response.TokenResponse'
+        "400":
+          description: Ошибка валидации данных (VALIDATION_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Неверные учетные данные (INVALID_CREDENTIALS)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка сервера (TOKEN_GENERATION_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Авторизация пользователя
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновление access токена с помощью refresh токена
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: refresh_token
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное обновление access токена
+          schema:
+            $ref: '#/definitions/response.TokenResponse'
+        "400":
+          description: Ошибка валидации данных (VALIDATION_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Неверный или просроченный refresh токен (INVALID_REFRESH_TOKEN)
+            или пользователь не найден (USER_NOT_FOUND)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка сервера (TOKEN_GENERATION_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Обновление access токена
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Регистрация нового пользователя
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешная регистрация
+          schema:
+            $ref: '#/definitions/response.SuccessResponse'
+        "400":
+          description: Ошибка валидации (VALIDATION_ERROR) или пользователь уже существует
+            (EMAIL_EXISTS)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка сервера (PASSWORD_HASH_ERROR, DB_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Регистрация пользователя
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
