@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/go-redis/redis/v8"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -28,4 +30,17 @@ func ConnectDatabase() {
 
 	DB = db
 	fmt.Println("Подключение к базе данных успешно!")
+}
+
+var (
+	ctx         = context.Background()
+	RedisClient *redis.Client
+)
+
+func InitRedis() {
+	RedisClient = redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379", // адрес вашего Redis сервера
+		Password: "",               // пароль, если он установлен
+		DB:       0,                // используемая база данных
+	})
 }

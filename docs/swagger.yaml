@@ -33,6 +33,97 @@ definitions:
     - password
     - surname
     type: object
+  handlers.Group:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      number:
+        type: string
+    type: object
+  handlers.GroupResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.Group'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  handlers.ScheduleEvent:
+    properties:
+      end_ts:
+        type: string
+      group:
+        items:
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            number:
+              type: string
+          type: object
+        type: array
+      id:
+        type: integer
+      lecturer:
+        items:
+          properties:
+            avatar_id:
+              type: integer
+            avatar_link:
+              type: string
+            description:
+              type: string
+            first_name:
+              type: string
+            id:
+              type: integer
+            last_name:
+              type: string
+            middle_name:
+              type: string
+          type: object
+        type: array
+      name:
+        type: string
+      room:
+        items:
+          properties:
+            building:
+              type: string
+            building_url:
+              type: string
+            direction:
+              type: string
+            id:
+              type: integer
+            name:
+              type: string
+          type: object
+        type: array
+      start_ts:
+        type: string
+    type: object
+  handlers.ScheduleResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.ScheduleEvent'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
   response.ErrorResponse:
     properties:
       code:
@@ -70,7 +161,6 @@ definitions:
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
     type: object
-host: https://testhackbackend-production.up.railway.app
 info:
   contact: {}
   title: Онлайн очередь для сдачи практики
@@ -175,6 +265,65 @@ paths:
       summary: Регистрация пользователя
       tags:
       - auth
+  /groups:
+    get:
+      consumes:
+      - application/json
+      description: Получает список всех групп, кэширует результат в Redis
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный ответ с данными групп
+          schema:
+            $ref: '#/definitions/handlers.GroupResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получение списка групп
+      tags:
+      - groups
+  /schedule:
+    get:
+      consumes:
+      - application/json
+      description: Получает расписание по заданным параметрам (start, end, group_id),
+        кэширует результат в Redis
+      parameters:
+      - description: Дата начала
+        in: query
+        name: start
+        required: true
+        type: string
+      - description: Дата окончания
+        in: query
+        name: end
+        required: true
+        type: string
+      - description: ID группы
+        in: query
+        name: group_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный ответ с данными расписания
+          schema:
+            $ref: '#/definitions/handlers.ScheduleResponse'
+        "400":
+          description: Ошибка валидации данных
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получение расписания
+      tags:
+      - schedule
 securityDefinitions:
   BearerAuth:
     in: header

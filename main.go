@@ -6,8 +6,10 @@ import (
 	"os"
 	_ "test_hack/docs"
 	"test_hack/internal/auth"
+	"test_hack/internal/handlers"
 	"test_hack/internal/models"
 	"test_hack/internal/storage"
+	"test_hack/internal/tasks"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -17,7 +19,6 @@ import (
 )
 
 // @Title						Онлайн очередь для сдачи практики
-// @host						https://testhackbackend-production.up.railway.app
 // @securityDefinitions.apikey	BearerAuth
 // @in							header
 // @name						Authorization
@@ -37,6 +38,10 @@ func main() {
 		log.Fatal("Ошибка при миграции... ", err.Error())
 	}
 
+	storage.InitRedis()
+
+	tasks.InitScheduler()
+
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -55,6 +60,21 @@ func main() {
 		authGroup.POST("/register", auth.Register)
 		authGroup.POST("/refresh", auth.RefreshToken)
 	}
+
+	apiGroup := r.Group("")
+	{
+		apiGroup.GET("/groups", handlers.GetGroupsHandler)
+		apiGroup.GET("/schedules", handlers.GetScheduleHandler)
+	}
+
+	// queues := r.Group("/queues")
+	// {
+	// 	// Здесь можно добавить эндпоинты join/leave и WebSocket
+	// 	queues.GET("/", handlers.GetQueuesHandler) // получение списка очередей
+	// 	queues.POST("/:id/join", handlers.JoinQueueHandler)
+	// 	queues.POST("/:id/leave", handlers.LeaveQueueHandler)
+	// 	queues.GET("/:id/ws", handlers.QueueWebSocketHandler)
+	// }
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("Ошибка запуска сервера...", err.Error())
