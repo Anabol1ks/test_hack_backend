@@ -64,7 +64,7 @@ func main() {
 	apiGroup := r.Group("")
 	{
 		apiGroup.GET("/groups", handlers.GetGroupsHandler)
-		apiGroup.GET("/schedules", handlers.GetScheduleHandler)
+		apiGroup.GET("/schedule", handlers.GetScheduleHandler)
 	}
 
 	// queues := r.Group("/queues")

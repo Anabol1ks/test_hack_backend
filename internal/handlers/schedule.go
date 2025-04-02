@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
+	"test_hack/internal/models"
 	"test_hack/internal/storage"
 
 	"github.com/gin-gonic/gin"
@@ -49,6 +52,8 @@ type ScheduleResponse struct {
 
 var scheduleCtx = context.Background()
 
+const customTimeLayout = "2006-01-02T15:04:05"
+
 // GetScheduleHandler получает расписание с внешнего API
 // @Summary		Получение расписания
 // @Description	Получает расписание по заданным параметрам (start, end, group_id), кэширует результат в Redis
@@ -63,29 +68,36 @@ var scheduleCtx = context.Background()
 // @Failure		500		{object}	response.ErrorResponse	"Ошибка сервера"
 // @Router			/schedule [get]
 func GetScheduleHandler(c *gin.Context) {
-	start := c.Query("start")
-	end := c.Query("end")
-	groupID := c.Query("group_id")
-	if start == "" || end == "" || groupID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Необходимо указать start, end и group_id"})
+	groupIDStr := c.Query("group_id")
+	if groupIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Необходимо указать group_id"})
+		return
+	}
+	// Опционально, можно передавать start и end через query, но мы зададим их по умолчанию: сегодня - сегодня+7 дней.
+	now := time.Now()
+	startTime := now
+	endTime := now.AddDate(0, 0, 7)
+
+	// Поиск в БД по расписанию для заданного периода, где GroupIDs содержит искомый group_id.
+	var schedules []models.Schedule
+	// Используем LIKE, например, если groupIDStr="67", то ищем "%67%"
+	pattern := "%" + groupIDStr + "%"
+	if err := storage.DB.
+		Where("start_time BETWEEN ? AND ? AND group_ids LIKE ?", startTime, endTime, pattern).
+		Find(&schedules).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка поиска расписания в БД"})
 		return
 	}
 
-	cacheKey := "schedule_" + start + "_" + end + "_" + groupID
-	redisClient := storage.RedisClient
-
-	// Проверка кэша
-	cached, err := redisClient.Get(scheduleCtx, cacheKey).Result()
-	if err == nil && cached != "" {
-		var schedule ScheduleResponse
-		if err := json.Unmarshal([]byte(cached), &schedule); err == nil {
-			c.JSON(http.StatusOK, schedule)
-			return
-		}
+	if len(schedules) > 0 {
+		// Возвращаем найденные данные
+		c.JSON(http.StatusOK, schedules)
+		return
 	}
 
-	// Формирование URL запроса к внешнему API
-	apiURL := "https://api.profcomff.com/timetable/event/?start=" + start + "&end=" + end + "&group_id=" + groupID
+	// Если данных нет, вызываем внешний API для загрузки расписания для этой группы.
+	apiURL := "https://api.profcomff.com/timetable/event/?start=" +
+		startTime.Format("2006-01-02") + "&end=" + endTime.Format("2006-01-02") + "&group_id=" + groupIDStr
 	resp, err := http.Get(apiURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось получить данные расписания"})
@@ -99,14 +111,65 @@ func GetScheduleHandler(c *gin.Context) {
 		return
 	}
 
-	var schedule ScheduleResponse
-	if err := json.Unmarshal(body, &schedule); err != nil {
+	var externalResp ScheduleResponse
+	if err := json.Unmarshal(body, &externalResp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка декодирования данных расписания"})
 		return
 	}
 
-	// Кэширование результата на 1 час
-	redisClient.Set(scheduleCtx, cacheKey, string(body), time.Hour)
+	// Для каждого события внешнего API:
+	// 1. Преобразуем строки с датами в time.Time.
+	// 2. Собираем список GroupIDs (из массива group, через запятую).
+	// 3. Если событие с таким ExternalID еще не существует в БД, сохраняем его.
+	var inserted []models.Schedule
+	for _, event := range externalResp.Items {
+		// Преобразуем время (предполагается формат ISO8601)
+		startT, err1 := time.Parse(customTimeLayout, event.StartTS)
+		endT, err2 := time.Parse(customTimeLayout, event.EndTS)
+		if err1 != nil || err2 != nil {
+			// Если ошибка парсинга, пропускаем событие
+			continue
+		}
 
-	c.JSON(http.StatusOK, schedule)
+		// Собираем список GroupIDs из event.Group
+		var groupIDs []string
+		for _, grp := range event.Group {
+			// Преобразуем int в строку
+			groupIDs = append(groupIDs, strconv.Itoa(grp.ID))
+		}
+		groupsJoined := strings.Join(groupIDs, ",")
+
+		// Проверяем наличие события с таким ExternalID
+		var existing models.Schedule
+		err := storage.DB.Where("external_id = ?", strconv.Itoa(event.ID)).First(&existing).Error
+		if err == nil {
+			// Событие уже есть, пропускаем его
+			continue
+		}
+
+		// Создаем новое событие
+		newEvent := models.Schedule{
+			ExternalID: strconv.Itoa(event.ID),
+			Name:       event.Name,
+			StartTime:  startT,
+			EndTime:    endT,
+			GroupIDs:   groupsJoined,
+		}
+
+		if err := storage.DB.Create(&newEvent).Error; err != nil {
+			// Если ошибка при сохранении, можно залогировать и продолжить
+			continue
+		}
+		inserted = append(inserted, newEvent)
+	}
+
+	// Если после загрузки ничего не вставлено, возвращаем ошибку или пустой список
+	if len(inserted) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "Нет новых событий", "data": schedules})
+		return
+	}
+
+	// После вставки возвращаем данные (можно комбинировать старые и новые, если они есть)
+	schedules = append(schedules, inserted...)
+	c.JSON(http.StatusOK, schedules)
 }
