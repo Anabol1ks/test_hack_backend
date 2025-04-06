@@ -10,6 +10,7 @@ import (
 	"test_hack/internal/models"
 	"test_hack/internal/storage"
 	"test_hack/internal/tasks"
+	"test_hack/internal/ws"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -42,6 +43,8 @@ func main() {
 
 	tasks.InitScheduler()
 
+	go ws.HubInstance.Run()
+
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -67,14 +70,10 @@ func main() {
 		apiGroup.GET("/schedule", handlers.GetScheduleHandler)
 	}
 
-	// queues := r.Group("/queues")
-	// {
-	// 	// Здесь можно добавить эндпоинты join/leave и WebSocket
-	// 	queues.GET("/", handlers.GetQueuesHandler) // получение списка очередей
-	// 	queues.POST("/:id/join", handlers.JoinQueueHandler)
-	// 	queues.POST("/:id/leave", handlers.LeaveQueueHandler)
-	// 	queues.GET("/:id/ws", handlers.QueueWebSocketHandler)
-	// }
+	queues := r.Group("/api/queues")
+	{
+		queues.GET("/:id/ws", ws.QueueWebSocketHandler)
+	}
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("Ошибка запуска сервера...", err.Error())
