@@ -8,6 +8,7 @@ import (
 	"test_hack/internal/auth"
 	"test_hack/internal/handlers"
 	"test_hack/internal/models"
+	"test_hack/internal/queue"
 	"test_hack/internal/storage"
 	"test_hack/internal/tasks"
 	"test_hack/internal/ws"
@@ -67,11 +68,14 @@ func main() {
 	apiGroup := r.Group("")
 	{
 		apiGroup.GET("/groups", handlers.GetGroupsHandler)
-		apiGroup.GET("/schedule", handlers.GetScheduleHandler)
+		apiGroup.GET("/schedule", handlers.GetFullScheduleHandler)
 	}
 
-	queues := r.Group("/api/queues")
+	r.GET("/api/queue/:id/status", queue.GetQueueStatusHandler)
+	queues := r.Group("/api/queues", auth.AuthMiddleware())
 	{
+		queues.POST("/:id/join", queue.JoinQueueHandler)
+		queues.POST("/:id/leave", queue.LeaveQueueHandler)
 		queues.GET("/:id/ws", ws.QueueWebSocketHandler)
 	}
 

@@ -174,3 +174,7 @@ func QueueWebSocketHandler(c *gin.Context) {
 	go client.writePump()
 	client.readPump()
 }
+
+func (h *Hub) BroadcastMessage(msg BroadcastMessage) {
+	h.broadcast <- msg
+}
