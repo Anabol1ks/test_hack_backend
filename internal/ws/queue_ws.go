@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"sync"
@@ -28,6 +29,13 @@ type Hub struct {
 type BroadcastMessage struct {
 	QueueID string
 	Message []byte
+}
+
+type WSMessage struct {
+	EventType string      `json:"event_type"`     // Тип события: "user_joined", "user_left", "queue_closed", "queue_update", ...
+	QueueID   string      `json:"queue_id"`       // Идентификатор очереди (как строка)
+	Data      interface{} `json:"data,omitempty"` // Дополнительные данные, зависящие от события
+	Timestamp int64       `json:"timestamp"`      // Метка времени (Unix)
 }
 
 // Создаем глобальный экземпляр хаба.
@@ -175,6 +183,16 @@ func QueueWebSocketHandler(c *gin.Context) {
 	client.readPump()
 }
 
-func (h *Hub) BroadcastMessage(msg BroadcastMessage) {
-	h.broadcast <- msg
+func (h *Hub) BroadcastWSMessage(msg WSMessage) {
+	msg.Timestamp = time.Now().Unix()
+	b, err := json.Marshal(msg)
+	if err != nil {
+		// Если не удалось сериализовать, логируем и выходим.
+		log.Println("Ошибка сериализации WSMessage:", err)
+		return
+	}
+	h.broadcast <- BroadcastMessage{
+		QueueID: msg.QueueID,
+		Message: b,
+	}
 }

@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"test_hack/internal/models"
@@ -57,21 +56,14 @@ func JoinQueueHandler(c *gin.Context) {
 		return
 	}
 
-	payload := map[string]interface{}{
-		"event_type": "user_joined",
-		"user_id":    userID,
-		"queue_id":   queueID,
-		"position":   newPosition,
-		"timestamp":  time.Now().Unix(),
-	}
-
-	msg, err := json.Marshal(payload)
-	if err == nil {
-		ws.HubInstance.BroadcastMessage(ws.BroadcastMessage{
-			QueueID: queueIDStr,
-			Message: msg,
-		})
-	}
+	ws.HubInstance.BroadcastWSMessage(ws.WSMessage{
+		EventType: "user_joined",
+		QueueID:   queueIDStr,
+		Data: map[string]interface{}{
+			"user_id":  userID,
+			"position": newPosition,
+		},
+	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Вступление в очередь прошла успешно", "position": newPosition})
 }
@@ -112,20 +104,14 @@ func LeaveQueueHandler(c *gin.Context) {
 	}
 
 	// Готовим сообщение для рассылки через WebSocket.
-	payload := map[string]interface{}{
-		"event_type":    "user_left",
-		"user_id":       userID,
-		"queue_id":      queueID,
-		"timestamp":     time.Now().Unix(),
-		"left_position": entry.Position,
-	}
-	msg, err := json.Marshal(payload)
-	if err == nil {
-		ws.HubInstance.BroadcastMessage(ws.BroadcastMessage{
-			QueueID: queueIDStr,
-			Message: msg,
-		})
-	}
+	ws.HubInstance.BroadcastWSMessage(ws.WSMessage{
+		EventType: "user_left",
+		QueueID:   queueIDStr,
+		Data: map[string]interface{}{
+			"user_id":       userID,
+			"left_position": entry.Position,
+		},
+	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Вы успешно вышли из очереди"})
 }

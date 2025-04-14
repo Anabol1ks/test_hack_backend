@@ -1,7 +1,6 @@
 package tasks
 
 import (
-	"encoding/json"
 	"log"
 	"strconv"
 	"time"
@@ -89,6 +88,12 @@ func InitScheduler() *cron.Cron {
 		log.Println("Ошибка запуска cron-задачи CloseExpiredQueues:", err)
 	}
 
+	// Новая задача: периодическая рассылка обновлений по активным очередям, каждая минута.
+	_, err = c.AddFunc("0 * * * * *", BroadcastActiveQueuesStatus)
+	if err != nil {
+		log.Println("Ошибка запуска cron-задачи BroadcastActiveQueuesStatus:", err)
+	}
+
 	c.Start()
 	log.Println("Cron-планировщик запущен.")
 	return c
@@ -119,45 +124,84 @@ func CloseExpiredQueues() {
 	now := time.Now()
 	var queues []models.Queue
 
-	// Ищем очереди, которые активны и время закрытия уже наступило.
 	if err := storage.DB.Where("is_active = ? AND closes_at <= ?", true, now).Find(&queues).Error; err != nil {
 		log.Println("Ошибка при поиске очередей для закрытия:", err)
 		return
 	}
 
-	// Если очередей для закрытия нет, можно завершить работу функции.
 	if len(queues) == 0 {
 		log.Println("Нет очередей для закрытия.")
 		return
 	}
 
 	for _, q := range queues {
-		// Обновляем статус очереди: помечаем как неактивную.
 		q.IsActive = false
 		if err := storage.DB.Save(&q).Error; err != nil {
-			log.Println("Ошибка при закрытии очереди для schedule_id", q.ScheduleID, ":", err)
+			log.Println("Ошибка закрытия очереди для schedule_id", q.ScheduleID, ":", err)
 			continue
 		}
-
 		log.Printf("Очередь для schedule_id %d (queue_id %d) закрыта.\n", q.ScheduleID, q.ID)
 
-		// Подготавливаем сообщение о закрытии очереди для WebSocket.
-		payload := map[string]interface{}{
-			"event_type": "queue_closed",
-			"queue_id":   q.ID,
-			"timestamp":  now.Unix(),
-		}
-		msg, err := json.Marshal(payload)
-		if err != nil {
-			log.Println("Ошибка сериализации сообщения о закрытии очереди:", err)
+		ws.HubInstance.BroadcastWSMessage(ws.WSMessage{
+			EventType: "queue_closed",
+			QueueID:   strconv.Itoa(int(q.ID)),
+			Data:      nil,
+		})
+	}
+}
+
+func BroadcastActiveQueuesStatus() {
+	// Извлекаем все активные очереди
+	var queues []models.Queue
+	if err := storage.DB.Where("is_active = ?", true).Find(&queues).Error; err != nil {
+		log.Println("Ошибка при извлечении активных очередей:", err)
+		return
+	}
+
+	// Если активных очередей нет — выходим
+	if len(queues) == 0 {
+		log.Println("Нет активных очередей для обновления.")
+		return
+	}
+
+	// Для каждой очереди собираем информацию о пользователях
+	for _, queue := range queues {
+		var entries []models.QueueEntry
+		// Загружаем записи участников с информацией о пользователе (имя, фамилия) и упорядочиваем по позиции
+		if err := storage.DB.Preload("User").Where("queue_id = ? AND exited_at IS NULL", queue.ID).
+			Order("position ASC").Find(&entries).Error; err != nil {
+			log.Printf("Ошибка при получении записей очереди (queue_id=%d): %v", queue.ID, err)
 			continue
 		}
 
-		// Отправляем сообщение всем клиентам, подключённым к этой очереди.
-		// Здесь мы используем q.ID в качестве идентификатора комнаты.
-		ws.HubInstance.BroadcastMessage(ws.BroadcastMessage{
-			QueueID: strconv.Itoa(int(q.ID)),
-			Message: msg,
+		// Формируем список участников
+		var participants []map[string]interface{}
+		for _, entry := range entries {
+			participant := map[string]interface{}{
+				"user_id":  entry.UserID,
+				"name":     entry.User.Name,
+				"surname":  entry.User.Surname,
+				"position": entry.Position,
+			}
+			participants = append(participants, participant)
+		}
+
+		// Формируем payload – актуальное состояние очереди
+		payload := map[string]interface{}{
+			"queue_id":     queue.ID,
+			"schedule_id":  queue.ScheduleID,
+			"is_active":    queue.IsActive,
+			"opens_at":     queue.OpensAt,
+			"closes_at":    queue.ClosesAt,
+			"participants": participants,
+		}
+
+		// Отправляем сообщение через WebSocket с использованием формата WSMessage
+		ws.HubInstance.BroadcastWSMessage(ws.WSMessage{
+			EventType: "queue_update",
+			QueueID:   strconv.Itoa(int(queue.ID)),
+			Data:      payload,
 		})
 	}
+	log.Println("Рассылка обновлений для активных очередей выполнена.")
 }
