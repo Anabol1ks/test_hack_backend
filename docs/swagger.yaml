@@ -55,75 +55,6 @@ definitions:
       total:
         type: integer
     type: object
-  handlers.ScheduleEvent:
-    properties:
-      end_ts:
-        type: string
-      group:
-        items:
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            number:
-              type: string
-          type: object
-        type: array
-      id:
-        type: integer
-      lecturer:
-        items:
-          properties:
-            avatar_id:
-              type: integer
-            avatar_link:
-              type: string
-            description:
-              type: string
-            first_name:
-              type: string
-            id:
-              type: integer
-            last_name:
-              type: string
-            middle_name:
-              type: string
-          type: object
-        type: array
-      name:
-        type: string
-      room:
-        items:
-          properties:
-            building:
-              type: string
-            building_url:
-              type: string
-            direction:
-              type: string
-            id:
-              type: integer
-            name:
-              type: string
-          type: object
-        type: array
-      start_ts:
-        type: string
-    type: object
-  handlers.ScheduleResponse:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/handlers.ScheduleEvent'
-        type: array
-      limit:
-        type: integer
-      offset:
-        type: integer
-      total:
-        type: integer
-    type: object
   response.ErrorResponse:
     properties:
       code:
@@ -142,11 +73,115 @@ definitions:
           example: Ошибка валидации данных
         type: string
     type: object
+  response.MessageResponse:
+    properties:
+      message:
+        example: Операция успешно выполнена
+        type: string
+    type: object
   response.SuccessResponse:
     properties:
       message:
         example: Операция успешно выполнена
         type: string
+    type: object
+  response.SwaggerParticipant:
+    properties:
+      name:
+        example: Иван
+        type: string
+      position:
+        example: 1
+        type: integer
+      surname:
+        example: Иванов
+        type: string
+      user_id:
+        example: 1
+        type: integer
+    type: object
+  response.SwaggerQueue:
+    properties:
+      closes_at:
+        example: "2023-01-01T10:00:00Z"
+        type: string
+      created_at:
+        example: "2023-01-01T08:00:00Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      max_participants:
+        example: 30
+        type: integer
+      opens_at:
+        example: "2023-01-01T09:00:00Z"
+        type: string
+      schedule_id:
+        example: 1
+        type: integer
+      updated_at:
+        example: "2023-01-01T08:00:00Z"
+        type: string
+    type: object
+  response.SwaggerQueueStatusResponse:
+    properties:
+      closes_at:
+        example: "2023-01-01T10:00:00Z"
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      opens_at:
+        example: "2023-01-01T09:00:00Z"
+        type: string
+      participants:
+        items:
+          $ref: '#/definitions/response.SwaggerParticipant'
+        type: array
+      queue_id:
+        example: 1
+        type: integer
+      schedule_id:
+        example: 1
+        type: integer
+    type: object
+  response.SwaggerSchedule:
+    properties:
+      created_at:
+        example: "2023-01-01T09:00:00Z"
+        type: string
+      end_time:
+        example: "2023-01-01T12:00:00Z"
+        type: string
+      external_id:
+        example: "123456"
+        type: string
+      group_ids:
+        example: 67,203,111
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: Практика по программированию
+        type: string
+      start_time:
+        example: "2023-01-01T10:00:00Z"
+        type: string
+      updated_at:
+        example: "2023-01-01T09:00:00Z"
+        type: string
+    type: object
+  response.SwaggerScheduleWithQueue:
+    properties:
+      queue:
+        $ref: '#/definitions/response.SwaggerQueue'
+      schedule:
+        $ref: '#/definitions/response.SwaggerSchedule'
     type: object
   response.TokenResponse:
     properties:
@@ -165,6 +200,139 @@ info:
   contact: {}
   title: Онлайн очередь для сдачи практики
 paths:
+  /api/queues/{id}/join:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет пользователя в очередь и уведомляет других участников
+      parameters:
+      - description: ID очереди
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное вступление в очередь с указанием позиции
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Ошибка валидации (INVALID_QUEUE_ID, ALREADY_IN_QUEUE, QUEUE_INACTIVE)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Очередь не найдена (QUEUE_NOT_FOUND)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка сервера (DB_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Вступление в очередь
+      tags:
+      - queue
+  /api/queues/{id}/leave:
+    post:
+      consumes:
+      - application/json
+      description: Удаляет пользователя из очереди и уведомляет других участников
+      parameters:
+      - description: ID очереди
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный выход из очереди
+          schema:
+            $ref: '#/definitions/response.SuccessResponse'
+        "400":
+          description: Ошибка валидации (INVALID_QUEUE_ID, NOT_IN_QUEUE)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка сервера (DB_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Выход из очереди
+      tags:
+      - queue
+  /api/queues/{id}/status:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о состоянии очереди и списке участников
+      parameters:
+      - description: ID очереди
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное получение статуса очереди
+          schema:
+            $ref: '#/definitions/response.SwaggerQueueStatusResponse'
+        "400":
+          description: Ошибка валидации (INVALID_QUEUE_ID)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Очередь не найдена (QUEUE_NOT_FOUND)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка сервера (DB_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение статуса очереди
+      tags:
+      - queue
+  /api/queues/{id}/ws:
+    get:
+      consumes:
+      - application/json
+      description: Устанавливает WebSocket соединение для получения обновлений очереди
+        в реальном времени
+      parameters:
+      - description: ID очереди
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "101":
+          description: Переключение протокола на WebSocket
+          schema:
+            type: string
+        "400":
+          description: Ошибка валидации (INVALID_QUEUE_ID)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка сервера (WEBSOCKET_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Подключение к WebSocket очереди
+      tags:
+      - websocket
   /auth/login:
     post:
       consumes:
@@ -278,7 +446,7 @@ paths:
           schema:
             $ref: '#/definitions/handlers.GroupResponse'
         "500":
-          description: Ошибка сервера
+          description: Ошибка сервера (API_ERROR, CACHE_ERROR, DECODE_ERROR)
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Получение списка групп
@@ -288,19 +456,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Получает расписание по заданным параметрам (start, end, group_id),
-        кэширует результат в Redis
+      description: Получает расписание по заданным параметрам (group_id), кэширует
+        результат в Redis
       parameters:
-      - description: Дата начала
-        in: query
-        name: start
-        required: true
-        type: string
-      - description: Дата окончания
-        in: query
-        name: end
-        required: true
-        type: string
       - description: ID группы
         in: query
         name: group_id
@@ -310,15 +468,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: Успешный ответ с данными расписания
+          description: Успешный ответ с данными расписания и связанными очередями
           schema:
-            $ref: '#/definitions/handlers.ScheduleResponse'
+            items:
+              $ref: '#/definitions/response.SwaggerScheduleWithQueue'
+            type: array
         "400":
-          description: Ошибка валидации данных
+          description: Ошибка валидации данных (MISSING_GROUP_ID)
           schema:
             $ref: '#/definitions/response.ErrorResponse'
         "500":
-          description: Ошибка сервера
+          description: Ошибка сервера (DB_ERROR, API_ERROR, DECODE_ERROR)
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Получение расписания

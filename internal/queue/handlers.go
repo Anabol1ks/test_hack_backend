@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"test_hack/internal/models"
+	"test_hack/internal/response"
 	"test_hack/internal/storage"
 	"test_hack/internal/ws"
 	"time"
@@ -11,31 +12,56 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// JoinQueueHandler обрабатывает запрос на вступление в очередь
+// @Summary		Вступление в очередь
+// @Description	Добавляет пользователя в очередь и уведомляет других участников
+// @Tags			queue
+// @Accept			json
+// @Produce		json
+// @Param			id	path		string	true	"ID очереди"
+// @Security		BearerAuth
+// @Success		200	{object}	response.MessageResponse	"Успешное вступление в очередь с указанием позиции"
+// @Failure		400	{object}	response.ErrorResponse	"Ошибка валидации (INVALID_QUEUE_ID, ALREADY_IN_QUEUE, QUEUE_INACTIVE)"
+// @Failure		404	{object}	response.ErrorResponse	"Очередь не найдена (QUEUE_NOT_FOUND)"
+// @Failure		500	{object}	response.ErrorResponse	"Ошибка сервера (DB_ERROR)"
+// @Router			/api/queues/{id}/join [post]
 func JoinQueueHandler(c *gin.Context) {
 	queueIDStr := c.Param("id")
 	queueID, err := strconv.Atoi(queueIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный идентификатор очереди"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Code:    "INVALID_QUEUE_ID",
+			Message: "Неверный идентификатор очереди",
+		})
 		return
 	}
 
 	userID := c.GetUint("userID")
 	var existingEntry models.QueueEntry
 	if err := storage.DB.Where("user_id = ? AND queue_id = ? AND exited_at IS NULL", userID, queueID).First(&existingEntry).Error; err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Пользователь уже состоит в этой очереди"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Code:    "ALREADY_IN_QUEUE",
+			Message: "Пользователь уже состоит в этой очереди",
+		})
 		return
 	}
 
 	var queue models.Queue
 	if err := storage.DB.First(&queue, queueID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Очередь не найдена"})
+		c.JSON(http.StatusNotFound, response.ErrorResponse{
+			Code:    "QUEUE_NOT_FOUND",
+			Message: "Очередь не найдена",
+		})
 		return
 	}
 
 	now := time.Now()
 	// Проверяем, что очередь активна: открыта и время не вышло (между OpensAt и ClosesAt)
 	if now.Before(queue.OpensAt) || now.After(queue.ClosesAt) || !queue.IsActive {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Очередь не активна"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Code:    "QUEUE_INACTIVE",
+			Message: "Очередь не активна",
+		})
 		return
 	}
 
@@ -52,7 +78,11 @@ func JoinQueueHandler(c *gin.Context) {
 	}
 
 	if err := storage.DB.Create(&entry).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка добаления в очередь"})
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Code:    "DB_ERROR",
+			Message: "Ошибка добаления в очередь",
+			Details: err.Error(),
+		})
 		return
 	}
 
@@ -68,11 +98,26 @@ func JoinQueueHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Вступление в очередь прошла успешно", "position": newPosition})
 }
 
+// LeaveQueueHandler обрабатывает запрос на выход из очереди
+// @Summary		Выход из очереди
+// @Description	Удаляет пользователя из очереди и уведомляет других участников
+// @Tags			queue
+// @Accept			json
+// @Produce		json
+// @Param			id	path		string	true	"ID очереди"
+// @Security		BearerAuth
+// @Success		200	{object}	response.SuccessResponse	"Успешный выход из очереди"
+// @Failure		400	{object}	response.ErrorResponse	"Ошибка валидации (INVALID_QUEUE_ID, NOT_IN_QUEUE)"
+// @Failure		500	{object}	response.ErrorResponse	"Ошибка сервера (DB_ERROR)"
+// @Router			/api/queues/{id}/leave [post]
 func LeaveQueueHandler(c *gin.Context) {
 	queueIDStr := c.Param("id")
 	queueID, err := strconv.Atoi(queueIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный идентификатор очереди"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Code:    "INVALID_QUEUE_ID",
+			Message: "Неверный идентификатор очереди",
+		})
 		return
 	}
 
@@ -82,13 +127,20 @@ func LeaveQueueHandler(c *gin.Context) {
 	if err := storage.DB.
 		Where("user_id = ? AND queue_id = ? AND exited_at IS NULL", userID, queueID).
 		First(&entry).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Активная запись в очереди не найдена"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Code:    "NOT_IN_QUEUE",
+			Message: "Активная запись в очереди не найдена",
+		})
 		return
 	}
 	now := time.Now()
 	entry.ExitedAt = &now
 	if err := storage.DB.Save(&entry).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при выходе из очереди"})
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Code:    "DB_ERROR",
+			Message: "Ошибка при выходе из очереди",
+			Details: err.Error(),
+		})
 		return
 	}
 
@@ -133,19 +185,38 @@ type QueueStatusResponse struct {
 	Participants []Participant `json:"participants"`
 }
 
+// GetQueueStatusHandler обрабатывает запрос на получение статуса очереди
+// @Summary		Получение статуса очереди
+// @Description	Возвращает информацию о состоянии очереди и списке участников
+// @Tags			queue
+// @Accept			json
+// @Produce		json
+// @Param			id	path		string	true	"ID очереди"
+// @Security		BearerAuth
+// @Success		200	{object}	response.SwaggerQueueStatusResponse	"Успешное получение статуса очереди"
+// @Failure		400	{object}	response.ErrorResponse	"Ошибка валидации (INVALID_QUEUE_ID)"
+// @Failure		404	{object}	response.ErrorResponse	"Очередь не найдена (QUEUE_NOT_FOUND)"
+// @Failure		500	{object}	response.ErrorResponse	"Ошибка сервера (DB_ERROR)"
+// @Router			/api/queues/{id}/status [get]
 func GetQueueStatusHandler(c *gin.Context) {
 	// Извлекаем queueID из параметров URL
 	queueIDStr := c.Param("id")
 	queueID, err := strconv.Atoi(queueIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный идентификатор очереди"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Code:    "INVALID_QUEUE_ID",
+			Message: "Неверный идентификатор очереди",
+		})
 		return
 	}
 
 	// Загружаем очередь по ID
 	var queue models.Queue
 	if err := storage.DB.First(&queue, queueID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Очередь не найдена"})
+		c.JSON(http.StatusNotFound, response.ErrorResponse{
+			Code:    "QUEUE_NOT_FOUND",
+			Message: "Очередь не найдена",
+		})
 		return
 	}
 
@@ -156,7 +227,11 @@ func GetQueueStatusHandler(c *gin.Context) {
 		Where("queue_id = ? AND exited_at IS NULL", queueID).
 		Order("position ASC").
 		Find(&entries).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки записей очереди"})
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Code:    "DB_ERROR",
+			Message: "Ошибка загрузки записей очереди",
+			Details: err.Error(),
+		})
 		return
 	}
 

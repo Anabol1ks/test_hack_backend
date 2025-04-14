@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"test_hack/internal/response"
 	"test_hack/internal/storage"
 
 	"github.com/gin-gonic/gin"
@@ -35,7 +36,7 @@ var ctx = context.Background()
 // @Accept			json
 // @Produce		json
 // @Success		200		{object}	GroupResponse	"Успешный ответ с данными групп"
-// @Failure		500		{object}	response.ErrorResponse	"Ошибка сервера"
+// @Failure		500		{object}	response.ErrorResponse	"Ошибка сервера (API_ERROR, CACHE_ERROR, DECODE_ERROR)"
 // @Router			/groups [get]
 func GetGroupsHandler(c *gin.Context) {
 	cacheKey := "groups_all"
@@ -55,24 +56,36 @@ func GetGroupsHandler(c *gin.Context) {
 	apiURL := "https://api.profcomff.com/timetable/group/?limit=1000"
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось получить данные групп"})
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Code:    "API_ERROR",
+			Message: "Не удалось получить данные групп",
+			Details: err.Error(),
+		})
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка чтения ответа внешнего API"})
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Code:    "API_ERROR",
+			Message: "Ошибка чтения ответа внешнего API",
+			Details: err.Error(),
+		})
 		return
 	}
 
 	var groups GroupResponse
 	if err := json.Unmarshal(body, &groups); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка декодирования данных групп"})
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Code:    "DECODE_ERROR",
+			Message: "Ошибка декодирования данных групп",
+			Details: err.Error(),
+		})
 		return
 	}
 
-	// Кэширование результата на 1 час
+	// Кэширование результата на 6 часов
 	redisClient.Set(ctx, cacheKey, string(body), time.Hour*6)
 
 	c.JSON(http.StatusOK, groups)

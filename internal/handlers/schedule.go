@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"test_hack/internal/models"
+	"test_hack/internal/response"
 	"test_hack/internal/storage"
 
 	"github.com/gin-gonic/gin"
@@ -63,21 +64,22 @@ var scheduleCtx = context.Background()
 
 // GetScheduleHandler получает расписание с внешнего API
 // @Summary		Получение расписания
-// @Description	Получает расписание по заданным параметрам (start, end, group_id), кэширует результат в Redis
+// @Description	Получает расписание по заданным параметрам (group_id), кэширует результат в Redis
 // @Tags			schedule
 // @Accept			json
 // @Produce		json
-// // @Param			start	query		string	false	"Дата начала"
-// // @Param			end	query		string	false	"Дата окончания"
 // @Param			group_id	query		string	true	"ID группы"
-// @Success		200		{object}	ScheduleResponse	"Успешный ответ с данными расписания"
-// @Failure		400		{object}	response.ErrorResponse	"Ошибка валидации данных"
-// @Failure		500		{object}	response.ErrorResponse	"Ошибка сервера"
+// @Success		200		{array}		response.SwaggerScheduleWithQueue	"Успешный ответ с данными расписания и связанными очередями"
+// @Failure		400		{object}	response.ErrorResponse	"Ошибка валидации данных (MISSING_GROUP_ID)"
+// @Failure		500		{object}	response.ErrorResponse	"Ошибка сервера (DB_ERROR, API_ERROR, DECODE_ERROR)"
 // @Router			/schedule [get]
 func GetFullScheduleHandler(c *gin.Context) {
 	groupIDStr := c.Query("group_id")
 	if groupIDStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Необходимо указать group_id"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Code:    "MISSING_GROUP_ID",
+			Message: "Необходимо указать group_id",
+		})
 		return
 	}
 
@@ -102,7 +104,11 @@ func GetFullScheduleHandler(c *gin.Context) {
 	if err := storage.DB.
 		Where("start_time BETWEEN ? AND ? AND group_ids LIKE ?", startTime, endTime, pattern).
 		Find(&schedules).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка поиска расписания в БД"})
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Code:    "DB_ERROR",
+			Message: "Ошибка поиска расписания в БД",
+			Details: err.Error(),
+		})
 		return
 	}
 
@@ -112,20 +118,32 @@ func GetFullScheduleHandler(c *gin.Context) {
 			startTime.Format("2006-01-02") + "&end=" + endTime.Format("2006-01-02") + "&group_id=" + groupIDStr
 		resp, err := http.Get(apiURL)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось получить данные расписания"})
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+				Code:    "API_ERROR",
+				Message: "Не удалось получить данные расписания",
+				Details: err.Error(),
+			})
 			return
 		}
 		defer resp.Body.Close()
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка чтения ответа внешнего API"})
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+				Code:    "API_ERROR",
+				Message: "Ошибка чтения ответа внешнего API",
+				Details: err.Error(),
+			})
 			return
 		}
 
 		var externalResp ScheduleResponse
 		if err := json.Unmarshal(body, &externalResp); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка декодирования данных расписания"})
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+				Code:    "DECODE_ERROR",
+				Message: "Ошибка декодирования данных расписания",
+				Details: err.Error(),
+			})
 			return
 		}
 

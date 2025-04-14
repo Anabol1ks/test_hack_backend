@@ -71,7 +71,7 @@ func main() {
 		apiGroup.GET("/schedule", handlers.GetFullScheduleHandler)
 	}
 
-	r.GET("/api/queue/:id/status", queue.GetQueueStatusHandler)
+	r.GET("/api/queues/:id/status", queue.GetQueueStatusHandler)
 	queues := r.Group("/api/queues", auth.AuthMiddleware())
 	{
 		queues.POST("/:id/join", queue.JoinQueueHandler)

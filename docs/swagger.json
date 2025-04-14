@@ -5,6 +5,214 @@
         "contact": {}
     },
     "paths": {
+        "/api/queues/{id}/join": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Добавляет пользователя в очередь и уведомляет других участников",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "queue"
+                ],
+                "summary": "Вступление в очередь",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID очереди",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешное вступление в очередь с указанием позиции",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации (INVALID_QUEUE_ID, ALREADY_IN_QUEUE, QUEUE_INACTIVE)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Очередь не найдена (QUEUE_NOT_FOUND)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера (DB_ERROR)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/queues/{id}/leave": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет пользователя из очереди и уведомляет других участников",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "queue"
+                ],
+                "summary": "Выход из очереди",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID очереди",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешный выход из очереди",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации (INVALID_QUEUE_ID, NOT_IN_QUEUE)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера (DB_ERROR)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/queues/{id}/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает информацию о состоянии очереди и списке участников",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "queue"
+                ],
+                "summary": "Получение статуса очереди",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID очереди",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешное получение статуса очереди",
+                        "schema": {
+                            "$ref": "#/definitions/response.SwaggerQueueStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации (INVALID_QUEUE_ID)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Очередь не найдена (QUEUE_NOT_FOUND)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера (DB_ERROR)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/queues/{id}/ws": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Устанавливает WebSocket соединение для получения обновлений очереди в реальном времени",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "websocket"
+                ],
+                "summary": "Подключение к WebSocket очереди",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID очереди",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Переключение протокола на WebSocket",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации (INVALID_QUEUE_ID)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера (WEBSOCKET_ERROR)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Авторизация пользователя и получение токенов",
@@ -176,7 +384,7 @@
                         }
                     },
                     "500": {
-                        "description": "Ошибка сервера",
+                        "description": "Ошибка сервера (API_ERROR, CACHE_ERROR, DECODE_ERROR)",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -186,7 +394,7 @@
         },
         "/schedule": {
             "get": {
-                "description": "Получает расписание по заданным параметрам (start, end, group_id), кэширует результат в Redis",
+                "description": "Получает расписание по заданным параметрам (group_id), кэширует результат в Redis",
                 "consumes": [
                     "application/json"
                 ],
@@ -200,20 +408,6 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Дата начала",
-                        "name": "start",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Дата окончания",
-                        "name": "end",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
                         "description": "ID группы",
                         "name": "group_id",
                         "in": "query",
@@ -222,19 +416,22 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Успешный ответ с данными расписания",
+                        "description": "Успешный ответ с данными расписания и связанными очередями",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ScheduleResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.SwaggerScheduleWithQueue"
+                            }
                         }
                     },
                     "400": {
-                        "description": "Ошибка валидации данных",
+                        "description": "Ошибка валидации данных (MISSING_GROUP_ID)",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Ошибка сервера",
+                        "description": "Ошибка сервера (DB_ERROR, API_ERROR, DECODE_ERROR)",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -328,112 +525,6 @@
                 }
             }
         },
-        "handlers.ScheduleEvent": {
-            "type": "object",
-            "properties": {
-                "end_ts": {
-                    "type": "string"
-                },
-                "group": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "id": {
-                                "type": "integer"
-                            },
-                            "name": {
-                                "type": "string"
-                            },
-                            "number": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "lecturer": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "avatar_id": {
-                                "type": "integer"
-                            },
-                            "avatar_link": {
-                                "type": "string"
-                            },
-                            "description": {
-                                "type": "string"
-                            },
-                            "first_name": {
-                                "type": "string"
-                            },
-                            "id": {
-                                "type": "integer"
-                            },
-                            "last_name": {
-                                "type": "string"
-                            },
-                            "middle_name": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "room": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "building": {
-                                "type": "string"
-                            },
-                            "building_url": {
-                                "type": "string"
-                            },
-                            "direction": {
-                                "type": "string"
-                            },
-                            "id": {
-                                "type": "integer"
-                            },
-                            "name": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                },
-                "start_ts": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.ScheduleResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handlers.ScheduleEvent"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
         "response.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -451,12 +542,158 @@
                 }
             }
         },
+        "response.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Операция успешно выполнена"
+                }
+            }
+        },
         "response.SuccessResponse": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string",
                     "example": "Операция успешно выполнена"
+                }
+            }
+        },
+        "response.SwaggerParticipant": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "Иван"
+                },
+                "position": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "surname": {
+                    "type": "string",
+                    "example": "Иванов"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "response.SwaggerQueue": {
+            "type": "object",
+            "properties": {
+                "closes_at": {
+                    "type": "string",
+                    "example": "2023-01-01T10:00:00Z"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T08:00:00Z"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "max_participants": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "opens_at": {
+                    "type": "string",
+                    "example": "2023-01-01T09:00:00Z"
+                },
+                "schedule_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-01-01T08:00:00Z"
+                }
+            }
+        },
+        "response.SwaggerQueueStatusResponse": {
+            "type": "object",
+            "properties": {
+                "closes_at": {
+                    "type": "string",
+                    "example": "2023-01-01T10:00:00Z"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "opens_at": {
+                    "type": "string",
+                    "example": "2023-01-01T09:00:00Z"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SwaggerParticipant"
+                    }
+                },
+                "queue_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "schedule_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "response.SwaggerSchedule": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T09:00:00Z"
+                },
+                "end_time": {
+                    "type": "string",
+                    "example": "2023-01-01T12:00:00Z"
+                },
+                "external_id": {
+                    "type": "string",
+                    "example": "123456"
+                },
+                "group_ids": {
+                    "type": "string",
+                    "example": "67,203,111"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Практика по программированию"
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2023-01-01T10:00:00Z"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-01-01T09:00:00Z"
+                }
+            }
+        },
+        "response.SwaggerScheduleWithQueue": {
+            "type": "object",
+            "properties": {
+                "queue": {
+                    "$ref": "#/definitions/response.SwaggerQueue"
+                },
+                "schedule": {
+                    "$ref": "#/definitions/response.SwaggerSchedule"
                 }
             }
         },

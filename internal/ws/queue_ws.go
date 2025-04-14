@@ -159,8 +159,19 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// QueueWebSocketHandler обновляет соединение до WebSocket и регистрирует клиента в Hub.
-// URL-пример: /api/queues/{id}/ws
+//	QueueWebSocketHandler обновляет соединение до WebSocket и регистрирует клиента в Hub.
+//
+// @Summary		Подключение к WebSocket очереди
+// @Description	Устанавливает WebSocket соединение для получения обновлений очереди в реальном времени
+// @Tags			websocket
+// @Accept			json
+// @Produce		json
+// @Param			id	path		string	true	"ID очереди"
+// @Security		BearerAuth
+// @Success		101	{string}	string	"Переключение протокола на WebSocket"
+// @Failure		400	{object}	response.ErrorResponse	"Ошибка валидации (INVALID_QUEUE_ID)"
+// @Failure		500	{object}	response.ErrorResponse	"Ошибка сервера (WEBSOCKET_ERROR)"
+// @Router			/api/queues/{id}/ws [get]
 func QueueWebSocketHandler(c *gin.Context) {
 	queueID := c.Param("id")
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
