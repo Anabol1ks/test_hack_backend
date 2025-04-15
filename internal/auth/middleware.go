@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 	"strings"
+	"test_hack/internal/handlers"
 	"test_hack/internal/response"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +25,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return accessSecret, nil
+			return handlers.AccessSecret, nil
 		})
 
 		if err != nil || !token.Valid {

@@ -1,4 +1,4 @@
-package queue
+package handlers
 
 import (
 	"net/http"
@@ -6,7 +6,6 @@ import (
 	"test_hack/internal/models"
 	"test_hack/internal/response"
 	"test_hack/internal/storage"
-	"test_hack/internal/ws"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -86,7 +85,7 @@ func JoinQueueHandler(c *gin.Context) {
 		return
 	}
 
-	ws.HubInstance.BroadcastWSMessage(ws.WSMessage{
+	HubInstance.BroadcastWSMessage(WSMessage{
 		EventType: "user_joined",
 		QueueID:   queueIDStr,
 		Data: map[string]interface{}{
@@ -156,7 +155,7 @@ func LeaveQueueHandler(c *gin.Context) {
 	}
 
 	// Готовим сообщение для рассылки через WebSocket.
-	ws.HubInstance.BroadcastWSMessage(ws.WSMessage{
+	HubInstance.BroadcastWSMessage(WSMessage{
 		EventType: "user_left",
 		QueueID:   queueIDStr,
 		Data: map[string]interface{}{

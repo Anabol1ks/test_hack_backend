@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
+	"test_hack/internal/handlers"
 	"test_hack/internal/models"
 	"test_hack/internal/storage"
-	"test_hack/internal/ws"
 
 	"github.com/robfig/cron/v3"
 )
@@ -142,7 +142,7 @@ func CloseExpiredQueues() {
 		}
 		log.Printf("Очередь для schedule_id %d (queue_id %d) закрыта.\n", q.ScheduleID, q.ID)
 
-		ws.HubInstance.BroadcastWSMessage(ws.WSMessage{
+		handlers.HubInstance.BroadcastWSMessage(handlers.WSMessage{
 			EventType: "queue_closed",
 			QueueID:   strconv.Itoa(int(q.ID)),
 			Data:      nil,
@@ -197,7 +197,7 @@ func BroadcastActiveQueuesStatus() {
 		}
 
 		// Отправляем сообщение через WebSocket с использованием формата WSMessage
-		ws.HubInstance.BroadcastWSMessage(ws.WSMessage{
+		handlers.HubInstance.BroadcastWSMessage(handlers.WSMessage{
 			EventType: "queue_update",
 			QueueID:   strconv.Itoa(int(queue.ID)),
 			Data:      payload,

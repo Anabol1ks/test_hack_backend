@@ -1,4 +1,4 @@
-package auth
+package handlers
 
 import (
 	"net/http"
@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	accessSecret  = []byte(os.Getenv("JWT_ACCESS_SECRET"))
+	AccessSecret  = []byte(os.Getenv("JWT_ACCESS_SECRET"))
 	refreshSecret = []byte(os.Getenv("JWT_REFRESH_SECRET"))
 )
 
@@ -128,7 +128,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := generateToken(user.ID, time.Minute*15, accessSecret)
+	accessToken, err := generateToken(user.ID, time.Minute*15, AccessSecret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Code:    "TOKEN_GENERATION_ERROR",
@@ -228,7 +228,7 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
-	newAccessToken, err := generateToken(user.ID, time.Minute*15, accessSecret)
+	newAccessToken, err := generateToken(user.ID, time.Minute*15, AccessSecret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 			Code:    "TOKEN_GENERATION_ERROR",

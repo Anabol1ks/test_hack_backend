@@ -8,10 +8,8 @@ import (
 	"test_hack/internal/auth"
 	"test_hack/internal/handlers"
 	"test_hack/internal/models"
-	"test_hack/internal/queue"
 	"test_hack/internal/storage"
 	"test_hack/internal/tasks"
-	"test_hack/internal/ws"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -41,10 +39,9 @@ func main() {
 	}
 
 	storage.InitRedis()
-
 	tasks.InitScheduler()
 
-	go ws.HubInstance.Run()
+	go handlers.HubInstance.Run()
 
 	r := gin.Default()
 
@@ -60,9 +57,9 @@ func main() {
 
 	authGroup := r.Group("/auth")
 	{
-		authGroup.POST("/login", auth.Login)
-		authGroup.POST("/register", auth.Register)
-		authGroup.POST("/refresh", auth.RefreshToken)
+		authGroup.POST("/login", handlers.Login)
+		authGroup.POST("/register", handlers.Register)
+		authGroup.POST("/refresh", handlers.RefreshToken)
 	}
 
 	apiGroup := r.Group("")
@@ -71,12 +68,12 @@ func main() {
 		apiGroup.GET("/schedule", handlers.GetFullScheduleHandler)
 	}
 
-	r.GET("/api/queues/:id/status", queue.GetQueueStatusHandler)
+	r.GET("/api/queues/:id/status", handlers.GetQueueStatusHandler)
 	queues := r.Group("/api/queues", auth.AuthMiddleware())
 	{
-		queues.POST("/:id/join", queue.JoinQueueHandler)
-		queues.POST("/:id/leave", queue.LeaveQueueHandler)
-		queues.GET("/:id/ws", ws.QueueWebSocketHandler)
+		queues.POST("/:id/join", handlers.JoinQueueHandler)
+		queues.POST("/:id/leave", handlers.LeaveQueueHandler)
+		queues.GET("/:id/ws", handlers.QueueWebSocketHandler)
 	}
 
 	if err := r.Run(":8080"); err != nil {
