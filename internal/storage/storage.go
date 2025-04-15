@@ -44,3 +44,22 @@ func InitRedis() {
 		DB:       0,                // используемая база данных
 	})
 }
+
+func ConnectTestingDatabase() {
+	host := os.Getenv("TEST_DB_HOST")
+	port := os.Getenv("TEST_DB_PORT")
+	user := os.Getenv("TEST_DB_USER")
+	password := os.Getenv("TEST_DB_PASSWORD")
+	dbname := os.Getenv("TEST_DB_NAME")
+
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Ошибка подключения к базе данных:", err)
+	}
+
+	DB = db
+	fmt.Println("Подключение к базе данных успешно!")
+}
