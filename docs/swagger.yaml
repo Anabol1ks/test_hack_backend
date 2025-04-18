@@ -55,6 +55,31 @@ definitions:
     - password
     - surname
     type: object
+  handlers.UserQueueItem:
+    properties:
+      closes_at:
+        type: string
+      end_time:
+        type: string
+      group_numbers:
+        items:
+          type: string
+        type: array
+      is_active:
+        type: boolean
+      opens_at:
+        type: string
+      position:
+        type: integer
+      queue_id:
+        type: integer
+      schedule_id:
+        type: integer
+      schedule_name:
+        type: string
+      start_time:
+        type: string
+    type: object
   response.ErrorResponse:
     properties:
       code:
@@ -486,6 +511,29 @@ paths:
       security:
       - BearerAuth: []
       summary: Получение данных пользователя
+      tags:
+      - profile
+  /profile/queues:
+    get:
+      consumes:
+      - application/json
+      description: Получение списка очередей, в которых пользователь участвует
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of queues the user is part of
+          schema:
+            items:
+              $ref: '#/definitions/handlers.UserQueueItem'
+            type: array
+        "500":
+          description: Server error (DB_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение списка своих очередей
       tags:
       - profile
   /schedule:

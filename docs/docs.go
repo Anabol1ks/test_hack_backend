@@ -442,6 +442,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/profile/queues": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Получение списка очередей, в которых пользователь участвует",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Получение списка своих очередей",
+                "responses": {
+                    "200": {
+                        "description": "List of queues the user is part of",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.UserQueueItem"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error (DB_ERROR)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/schedule": {
             "get": {
                 "description": "Получает расписание по заданным параметрам (group_id), кэширует результат в Redis",
@@ -571,6 +608,44 @@ const docTemplate = `{
                     "minLength": 6
                 },
                 "surname": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.UserQueueItem": {
+            "type": "object",
+            "properties": {
+                "closes_at": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "group_numbers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "opens_at": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "queue_id": {
+                    "type": "integer"
+                },
+                "schedule_id": {
+                    "type": "integer"
+                },
+                "schedule_name": {
+                    "type": "string"
+                },
+                "start_time": {
                     "type": "string"
                 }
             }
@@ -797,6 +872,7 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+
 }
 
 func init() {
