@@ -392,6 +392,46 @@
                 }
             }
         },
+        "/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Получение данных пользователя по токену",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Получение данных пользователя",
+                "responses": {
+                    "200": {
+                        "description": "Успешное получение данных пользователя",
+                        "schema": {
+                            "$ref": "#/definitions/response.ProfileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Ошибка авторизации (UNAUTHORIZED)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера (DB_ERROR)",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/schedule": {
             "get": {
                 "description": "Получает расписание по заданным параметрам (group_id), кэширует результат в Redis",
@@ -548,6 +588,23 @@
                 "message": {
                     "type": "string",
                     "example": "Операция успешно выполнена"
+                }
+            }
+        },
+        "response.ProfileResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
                 }
             }
         },

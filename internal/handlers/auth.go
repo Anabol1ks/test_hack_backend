@@ -251,3 +251,40 @@ func RefreshToken(c *gin.Context) {
 		RefreshToken: newRefreshToken,
 	})
 }
+
+// GetMyProfileHandler godoc
+// @Summary		Получение данных пользователя
+// @Description	Получение данных пользователя по токену
+// @Tags			profile
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Success		200	{object}	response.ProfileResponse	"Успешное получение данных пользователя"
+// @Failure		401	{object}	response.ErrorResponse	"Ошибка авторизации (UNAUTHORIZED)"
+// @Failure		500	{object}	response.ErrorResponse	"Ошибка сервера (DB_ERROR)"
+// @Router			/profile [get]
+func GetMyProfileHandler(c *gin.Context) {
+	userID := c.GetUint("userID")
+	if userID == 0 {
+		c.JSON(http.StatusUnauthorized, response.ErrorResponse{
+			Code:    "UNAUTHORIZED",
+			Message: "Ошибка авторизации",
+		})
+		return
+	}
+	var user models.User
+	if err := storage.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{
+			Code:    "DB_ERROR",
+			Message: "Ошибка при получении данных пользователя",
+			Details: err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, response.ProfileResponse{
+		ID:      user.ID,
+		Name:    user.Name,
+		Surname: user.Surname,
+		Email:   user.Email,
+	})
+}

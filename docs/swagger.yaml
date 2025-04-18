@@ -79,6 +79,17 @@ definitions:
         example: Операция успешно выполнена
         type: string
     type: object
+  response.ProfileResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      surname:
+        type: string
+    type: object
   response.SuccessResponse:
     properties:
       message:
@@ -452,6 +463,31 @@ paths:
       summary: Получение списка групп
       tags:
       - groups
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: Получение данных пользователя по токену
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное получение данных пользователя
+          schema:
+            $ref: '#/definitions/response.ProfileResponse'
+        "401":
+          description: Ошибка авторизации (UNAUTHORIZED)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка сервера (DB_ERROR)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение данных пользователя
+      tags:
+      - profile
   /schedule:
     get:
       consumes:

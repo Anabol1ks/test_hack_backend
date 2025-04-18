@@ -127,3 +127,10 @@ type WSQueueUpdateData struct {
 	ClosesAt     time.Time            `json:"closes_at" example:"2023-01-01T10:00:00Z"`
 	Participants []SwaggerParticipant `json:"participants"`
 }
+
+type ProfileResponse struct {
+	ID      uint   `json:"id"`
+	Name    string `json:"name"`
+	Surname string `json:"surname"`
+	Email   string `json:"email"`
+}

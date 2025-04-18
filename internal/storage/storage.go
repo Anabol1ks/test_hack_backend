@@ -39,9 +39,9 @@ var (
 
 func InitRedis() {
 	RedisClient = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379", // адрес вашего Redis сервера
-		Password: "",               // пароль, если он установлен
-		DB:       0,                // используемая база данных
+		Addr:     os.Getenv("REDIS_ADDR"),
+		Password: os.Getenv("REDIS_PASS"),
+		DB:       0,
 	})
 }
 

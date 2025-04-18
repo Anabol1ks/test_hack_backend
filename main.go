@@ -62,6 +62,11 @@ func main() {
 		authGroup.POST("/refresh", handlers.RefreshToken)
 	}
 
+	profileGroup := r.Group("/profile", auth.AuthMiddleware())
+	{
+		profileGroup.GET("/", handlers.GetMyProfileHandler)
+	}
+
 	apiGroup := r.Group("")
 	{
 		apiGroup.GET("/groups", handlers.GetGroupsHandler)
