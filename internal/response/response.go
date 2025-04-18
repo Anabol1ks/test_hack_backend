@@ -97,3 +97,33 @@ type SwaggerQueueStatusResponse struct {
 	ClosesAt     time.Time            `json:"closes_at" example:"2023-01-01T10:00:00Z"`
 	Participants []SwaggerParticipant `json:"participants"`
 }
+
+// WSMessage представляет сообщение WebSocket
+type WSMessage struct {
+	EventType string      `json:"event_type" example:"queue_update" enum:"user_joined,user_left,queue_closed,queue_update"`
+	QueueID   string      `json:"queue_id" example:"1"`
+	Data      interface{} `json:"data,omitempty"`
+	Timestamp int64       `json:"timestamp" example:"1609459200"`
+}
+
+// WSUserJoinedData представляет данные события присоединения пользователя
+type WSUserJoinedData struct {
+	UserID   uint `json:"user_id" example:"123"`
+	Position int  `json:"position" example:"5"`
+}
+
+// WSUserLeftData представляет данные события выхода пользователя
+type WSUserLeftData struct {
+	UserID       uint `json:"user_id" example:"123"`
+	LeftPosition int  `json:"left_position" example:"5"`
+}
+
+// WSQueueUpdateData представляет данные события обновления очереди
+type WSQueueUpdateData struct {
+	QueueID      uint                 `json:"queue_id" example:"1"`
+	ScheduleID   uint                 `json:"schedule_id" example:"5"`
+	IsActive     bool                 `json:"is_active" example:"true"`
+	OpensAt      time.Time            `json:"opens_at" example:"2023-01-01T09:00:00Z"`
+	ClosesAt     time.Time            `json:"closes_at" example:"2023-01-01T10:00:00Z"`
+	Participants []SwaggerParticipant `json:"participants"`
+}

@@ -1,38 +1,4 @@
 definitions:
-  auth.LoginRequest:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
-    type: object
-  auth.RefreshTokenRequest:
-    properties:
-      refresh_token:
-        type: string
-    required:
-    - refresh_token
-    type: object
-  auth.RegisterRequest:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-      password:
-        minLength: 6
-        type: string
-      surname:
-        type: string
-    required:
-    - email
-    - name
-    - password
-    - surname
-    type: object
   handlers.Group:
     properties:
       id:
@@ -54,6 +20,40 @@ definitions:
         type: integer
       total:
         type: integer
+    type: object
+  handlers.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      surname:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - surname
     type: object
   response.ErrorResponse:
     properties:
@@ -344,7 +344,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/auth.LoginRequest'
+          $ref: '#/definitions/handlers.LoginRequest'
       produces:
       - application/json
       responses:
@@ -378,7 +378,7 @@ paths:
         name: refresh_token
         required: true
         schema:
-          $ref: '#/definitions/auth.RefreshTokenRequest'
+          $ref: '#/definitions/handlers.RefreshTokenRequest'
       produces:
       - application/json
       responses:
@@ -413,7 +413,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/auth.RegisterRequest'
+          $ref: '#/definitions/handlers.RegisterRequest'
       produces:
       - application/json
       responses:

@@ -243,7 +243,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.LoginRequest"
+                            "$ref": "#/definitions/handlers.LoginRequest"
                         }
                     }
                 ],
@@ -295,7 +295,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.RefreshTokenRequest"
+                            "$ref": "#/definitions/handlers.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -347,7 +347,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.RegisterRequest"
+                            "$ref": "#/definitions/handlers.RegisterRequest"
                         }
                     }
                 ],
@@ -451,56 +451,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "auth.LoginRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "auth.RefreshTokenRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "auth.RegisterRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "name",
-                "password",
-                "surname"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 6
-                },
-                "surname": {
-                    "type": "string"
-                }
-            }
-        },
         "handlers.Group": {
             "type": "object",
             "properties": {
@@ -532,6 +482,56 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "handlers.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.RefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password",
+                "surname"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "surname": {
+                    "type": "string"
                 }
             }
         },
