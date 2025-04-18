@@ -134,7 +134,7 @@ JWT_REFRESH_SECRET=your_very_secure_jwt_refresh_secret_key_here
 - **Content-Type:** `application/json`
 - **Swagger UI:** `http://localhost:8080/swagger/index.html`  
   _Скриншот интерфейса Swagger UI:_  
-  ![Swagger UI](./docs/swagger_ui_placeholder.png)
+  ![Swagger UI](./documentation/swaggerUI.png)
 
 ---
 
