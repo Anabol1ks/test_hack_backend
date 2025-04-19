@@ -17,7 +17,7 @@ func CreateQueueForUpcomingEvents() {
 	now := time.Now()
 	// Ищем события, у которых начало происходит в период от текущего момента до (текущего времени + 24 часа + 5 минут)
 	startWindow := now
-	endWindow := now.Add(28 * time.Hour).Add(5 * time.Minute)
+	endWindow := now.Add(56 * time.Hour).Add(5 * time.Minute)
 
 	log.Printf("Поиск событий в окне: %s - %s\n", startWindow.Format(time.RFC3339), endWindow.Format(time.RFC3339))
 
