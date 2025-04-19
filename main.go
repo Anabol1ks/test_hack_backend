@@ -75,11 +75,11 @@ func main() {
 	}
 
 	r.GET("/api/queues/:id/status", handlers.GetQueueStatusHandler)
+	r.GET("/api/queues/:id/ws", handlers.QueueWebSocketHandler)
 	queues := r.Group("/api/queues", auth.AuthMiddleware())
 	{
 		queues.POST("/:id/join", handlers.JoinQueueHandler)
 		queues.POST("/:id/leave", handlers.LeaveQueueHandler)
-		queues.GET("/:id/ws", handlers.QueueWebSocketHandler)
 	}
 
 	if err := r.Run(":8080"); err != nil {
